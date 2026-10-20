@@ -20,6 +20,8 @@ export const DEFAULT_CONFIG = {
     mainRef: 'main',
   },
   start: {
+    // auto dispensa PRs/release na abertura com origin local ou ausente.
+    externalSources: 'auto',
     // Quantos commits do arquivo de constraints olhar para trás. Teto porque a
     // leitura é um `git show` por commit, e um id apagado aparece no commit
     // seguinte — não daqui a cem.

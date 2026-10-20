@@ -246,3 +246,34 @@ agentes diferentes; publicado porque pode servir a mais alguém.
 ---
 
 Feito com erva-mate por Vibecora.
+
+## Abertura local-first (0.5.1)
+
+`start.externalSources` controla somente as consultas de PRs (`gh`) e de
+`/api/release` na abertura:
+
+| Valor | Comportamento |
+|---|---|
+| `auto` (padrão) | consulta com `origin` de rede; dispensa com caminho local, `file://` ou sem `origin` |
+| `always` | habilita as consultas mesmo com `origin` local ou ausente |
+| `never` | dispensa as consultas, inclusive com `origin` de rede |
+
+```json
+{ "start": { "externalSources": "auto" } }
+```
+
+O relatório informa a política e se as consultas foram habilitadas. Uma fonte
+habilitada ainda pode estar indisponível; `external_read` não comprova que a
+Produção foi verificada. A medição do `origin` continua ativa em todos os modos:
+`never` não torna offline um `origin` de rede. `audit` é uma operação explícita
+separada e não muda com esta configuração.
+
+### Cópia vendorizada rastreável
+
+Para incorporar a ferramenta sem depender de rede na instalação, copie os
+arquivos distribuídos de uma tag/commit revisado, sem alterações locais. Guarde
+fora da pasta copiada a URL, versão, commit de origem, lista de arquivos e seus
+hashes. Confira esses hashes no gate do consumidor e rode os testes da ferramenta
+e da integração antes de atualizar. Mudanças genéricas devem voltar ao projeto
+público e resultar numa versão nova; não mantenha implementações diferentes com
+o mesmo número de versão.

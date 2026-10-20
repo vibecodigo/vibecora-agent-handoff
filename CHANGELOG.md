@@ -11,6 +11,21 @@ acontece sozinho.
 npm i -D github:rafaspol/vibecora-agent-handoff#<tag-ou-commit-revisado>
 ```
 
+## [0.5.1] — 2026-10-20
+
+### Corrigido
+
+- Conciliação da abertura local-first com as melhorias públicas de isolamento de
+  operações do ledger, persistência/recuperação de candidatos e evidências de
+  integração, preservadas nesta versão.
+- `start` dispensa consultas de PRs e release com `origin` local ou ausente por
+  padrão. `start.externalSources` aceita `auto`, `always` e `never`; relatório
+  informa a política e testes exercem as chamadas e sua ausência.
+- Leitura compatível de composições históricas no ledger, preservadas como
+  `legacyIntegration` / `legacy-unverified`, sem certificar prova nova.
+- Documentado o procedimento para manter cópias vendorizadas rastreáveis e sem
+  alterações locais silenciosas.
+
 ## [0.5.0] — 2026-09-24
 
 Construída sobre a 0.4.2, na mesma linha.

@@ -1,6 +1,6 @@
 {
   "name": "vibecora-agent-handoff",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Handoff verificável, fila compartilhada de tarefas e continuidade preventiva entre agentes de código.",
   "keywords": [
     "handoff",

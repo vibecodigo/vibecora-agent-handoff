@@ -57,6 +57,10 @@ export function makeGitFacts({ cwd = process.cwd(), mainRef = 'main' } = {}) {
     return g(['rev-parse', '--abbrev-ref', 'HEAD']);
   }
 
+  function originUrl() {
+    return g(['remote', 'get-url', 'origin']);
+  }
+
   function commitExists(sha) {
     if (!sha) return false;
     try {
@@ -204,6 +208,7 @@ export function makeGitFacts({ cwd = process.cwd(), mainRef = 'main' } = {}) {
   return {
     headCommit,
     currentBranch,
+    originUrl,
     commitExists,
     mainContains,
     isAncestor,

@@ -255,3 +255,11 @@ exibido confirmação: consulte o histórico remoto antes de tentar novamente.
 O ledger precisa existir e ter a branch configurada. O CLI não inicia agentes,
 não consulta recursos sem uma fonte exposta pelo host e não autoriza deploy,
 merge ou publicação.
+
+### Evidência histórica de integração
+
+Registros históricos `version: 1`, `mode: reviewed-composition` e método
+`reviewed-candidate-manifest-and-composed-file-review` são preservados em
+`legacyIntegration`, marcados `legacy-unverified`. Não são provas verificadas
+pelo contrato atual. O comando de conclusão continua exigindo a verificação
+atual; não produz esse formato histórico. Eventos antigos não são reescritos.

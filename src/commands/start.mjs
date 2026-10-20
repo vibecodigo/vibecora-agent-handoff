@@ -25,6 +25,34 @@ import { run as briefRun } from './brief.mjs';
 
 const execFileAsync = promisify(execFile);
 
+// Uma abertura local-first mede o `origin` compartilhado, mas não atravessa a
+// fronteira de release. Caminhos absolutos, relativos e `file://` são remotos
+// Git locais; HTTPS/SSH e a forma scp (`git@host:repo`) são externos.
+//
+// Na dúvida, um valor sem sintaxe de rede é tratado como caminho local. É a
+// escolha segura: deixar de consultar uma fonte externa vira "não medido";
+// consultá-la por engano quebra a promessa de que o trabalho cotidiano não
+// depende de GitHub nem de Produção.
+export function isLocalGitRemoteUrl(value) {
+  if (typeof value !== 'string' || value.trim() === '') return false;
+  const remote = value.trim();
+  if (remote.startsWith('file://')) return true;
+  if (path.isAbsolute(remote) || path.win32.isAbsolute(remote)) return true;
+  if (remote.startsWith('./') || remote.startsWith('../')) return true;
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(remote)) return false;
+  if (/^[^/\\:]+:/.test(remote)) return false;
+  return true;
+}
+
+export function externalOpeningSourcesAllowed(originUrl, policy = 'auto') {
+  if (!['auto', 'always', 'never'].includes(policy)) {
+    throw new Error('start.externalSources precisa ser auto, always ou never.');
+  }
+  if (policy === 'always') return true;
+  if (policy === 'never') return false;
+  return Boolean(originUrl) && !isLocalGitRemoteUrl(originUrl);
+}
+
 // PRs abertas. `gh` é opcional: sem ele a leitura degrada para "não consultado"
 // e o relatório diz isso, em vez de fingir que olhou.
 async function readOpenPrs(cwd, env) {
@@ -86,10 +114,14 @@ function historicalConstraintIds(git, filePath, limit) {
 export async function collectReadings({ cwd, config, env = process.env }) {
   const git = makeGitFacts({ cwd, mainRef: config.git?.mainRef || 'main' });
 
+  const originUrl = git.originUrl();
+  const externalSourcesPolicy = config.start?.externalSources ?? 'auto';
+  const readExternalSources = externalOpeningSourcesAllowed(originUrl, externalSourcesPolicy);
+
   const [heads, openPrs, published] = await Promise.all([
     Promise.resolve(git.remoteHeads()),
-    readOpenPrs(cwd, env),
-    readPublished(config, env),
+    readExternalSources ? readOpenPrs(cwd, env) : Promise.resolve(null),
+    readExternalSources ? readPublished(config, env) : Promise.resolve(null),
   ]);
 
   const mainRef = config.git?.mainRef || 'main';
@@ -164,6 +196,9 @@ export async function collectReadings({ cwd, config, env = process.env }) {
   const measured = {
     head: git.headCommit(),
     branch: git.currentBranch(),
+    origin: originUrl,
+    external_read: readExternalSources,
+    external_sources_policy: externalSourcesPolicy,
     snapshot: {
       run_id: snapshot?.run_id || null,
       commit: snapshotCommit,
@@ -209,6 +244,10 @@ export async function run(args, { cwd = process.cwd(), config, configInfo }) {
       : 'ainda não existe',
   );
   line('publicado', measured.published);
+  line(
+    'externas',
+    `${measured.external_read ? 'habilitadas' : 'ignoradas'} — política ${measured.external_sources_policy}`,
+  );
   line(
     'remoto',
     measured.remote_read

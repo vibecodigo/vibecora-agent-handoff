@@ -452,3 +452,23 @@ test('o BOARD.md ressalva a aprovação declarada, nova ou antiga, e não a docu
   // A projeção do ROADMAP não muda de forma: quem a consome faz digest dela.
   assert.equal('approval' in boardProjection(board).priorities[0], false);
 });
+
+test('composição histórica é preservada como declaração; prova inválida continua recusada', () => {
+  const commit = 'a'.repeat(40);
+  const base = [draft('legacy', 1), approve('legacy'),
+    event('task_claimed', { taskId: 'legacy', agent: AGENT_A, claimEpoch: 1 }),
+    event('task_ready', { taskId: 'legacy', agent: AGENT_A, claimEpoch: 1, candidateCommit: commit })];
+  const evidence = { version: 1, mode: 'reviewed-composition',
+    method: 'reviewed-candidate-manifest-and-composed-file-review',
+    candidateCommit: commit, evidenceRef: 'ledger:evidence/review.json' };
+  const board = reduceTaskEvents([...base, event('task_done', { taskId: 'legacy', integration: evidence })]);
+  assert.equal(board.tasks.legacy.status, 'done');
+  assert.equal(board.tasks.legacy.integration, null);
+  assert.deepEqual(boardProjection(board).history[0].legacyIntegration,
+    { validation: 'legacy-unverified', evidence });
+  for (const integration of [{ ...evidence, method: 'unknown' }, { mode: 'ancestry' },
+    { ...evidence, mode: 'unknown' }]) {
+    assert.throws(() => reduceTaskEvents([...base,
+      event('task_done', { taskId: 'legacy', integration })]), /integração|SHA/);
+  }
+});

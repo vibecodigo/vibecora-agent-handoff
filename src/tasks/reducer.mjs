@@ -282,8 +282,16 @@ export function reduceTaskEvents(events, { project = 'unknown' } = {}) {
         throw new Error(`A tarefa ${task.id} precisa estar ready antes de done.`);
       }
       task.status = 'done';
-      task.integration = event.integration == null ? null :
+      // Historical reviewed compositions predate the verifiable integration
+      // schema. Preserve them as declared evidence, never as a new proof.
+      const legacy = event.integration?.version === 1 &&
+        event.integration.mode === 'reviewed-composition' &&
+        event.integration.method === 'reviewed-candidate-manifest-and-composed-file-review';
+      task.integration = legacy || event.integration == null ? null :
         validateIntegration(event.integration, task.candidateCommit);
+      task.legacyIntegration = legacy ? {
+        validation: 'legacy-unverified', evidence: event.integration,
+      } : null;
       task.doneAt = event.at;
       board.queue = board.queue.filter((id) => id !== task.id);
     } else if (event.type === 'task_impeded') {
@@ -457,6 +465,7 @@ export function boardProjection(board) {
       readyAt: task.readyAt || null,
       doneAt: task.doneAt || null,
       integration: task.integration || null,
+      legacyIntegration: task.legacyIntegration || null,
       candidateCommit: task.candidateCommit || null,
       candidate: task.candidate || null,
       rejection: task.rejection || null,
